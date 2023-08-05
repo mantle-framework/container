@@ -10,6 +10,7 @@ namespace Mantle\Container;
 use ArrayAccess;
 use Closure;
 use Exception;
+use Mantle\Contracts\Container as Container_Contract;
 use LogicException;
 use Mantle\Support\Reflector;
 use ReflectionClass;
@@ -21,13 +22,13 @@ use ReflectionParameter;
 /**
  * Service Container
  */
-class Container implements ArrayAccess, \Mantle\Contracts\Container {
+class Container implements ArrayAccess, Container_Contract {
 	/**
 	 * The current globally available container (if any).
 	 *
-	 * @var \Mantle\Contracts\Container|null
+	 * @var Container_Contract|null
 	 */
-	protected static ?\Mantle\Contracts\Container $instance;
+	protected static ?Container_Contract $instance;
 
 	/**
 	 * An array of the types that have been resolved.
@@ -1126,7 +1127,7 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * Get the globally available instance of the container.
 	 *
 	 * @deprecated Use `get_instance()` instead.
-	 * @return \Mantle\Contracts\Container
+	 * @return Container_Contract
 	 */
 	public static function getInstance() {
 		return static::get_instance();
@@ -1135,9 +1136,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	/**
 	 * Get the globally available instance of the container.
 	 *
-	 * @return \Mantle\Contracts\Container
+	 * @return Container_Contract
 	 */
-	public static function get_instance(): \Mantle\Contracts\Container {
+	public static function get_instance(): Container_Contract {
 		if ( ! isset( static::$instance ) ) {
 			static::$instance = new static();
 		}
@@ -1148,10 +1149,10 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	/**
 	 * Set the shared instance of the container.
 	 *
-	 * @param  \Mantle\Contracts\Container|null $container
-	 * @return \Mantle\Contracts\Container|null
+	 * @param  Container_Contract|null $container
+	 * @return Container_Contract|null
 	 */
-	public static function set_instance( \Mantle\Contracts\Container|null $container = null ): ?\Mantle\Contracts\Container {
+	public static function set_instance( Container_Contract|null $container = null ): ?Container_Contract {
 		static::$instance = $container;
 
 		return static::$instance;

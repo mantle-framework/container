@@ -24,8 +24,10 @@ use ReflectionParameter;
 class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	/**
 	 * The current globally available container (if any).
+	 *
+	 * @var \Mantle\Contracts\Container|null
 	 */
-	protected static ?\Mantle\Contracts\Container $instance = null;
+	protected static ?\Mantle\Contracts\Container $instance;
 
 	/**
 	 * An array of the types that have been resolved.
@@ -143,8 +145,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * Determine if the given abstract type has been bound.
 	 *
 	 * @param string $abstract Abstract name.
+	 * @return bool
 	 */
-	public function bound( $abstract ): bool {
+	public function bound( $abstract ) {
 		return isset( $this->bindings[ $abstract ] ) ||
 			isset( $this->instances[ $abstract ] ) ||
 			$this->is_alias( $abstract );
@@ -161,8 +164,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * Determine if the given abstract type has been resolved.
 	 *
 	 * @param string $abstract Abstract name.
+	 * @return bool
 	 */
-	public function resolved( $abstract ): bool {
+	public function resolved( $abstract ) {
 		if ( $this->is_alias( $abstract ) ) {
 			$abstract = $this->get_alias( $abstract );
 		}
@@ -175,8 +179,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * Determine if a given type is shared.
 	 *
 	 * @param string $abstract Abstract name.
+	 * @return bool
 	 */
-	public function is_shared( $abstract ): bool {
+	public function is_shared( $abstract ) {
 		return isset( $this->instances[ $abstract ] ) ||
 			( isset( $this->bindings[ $abstract ]['shared'] ) &&
 			true === $this->bindings[ $abstract ]['shared'] );
@@ -198,8 +203,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * @param  string               $abstract
 	 * @param  \Closure|string|null $concrete
 	 * @param  bool                 $shared
+	 * @return void
 	 */
-	public function bind( $abstract, $concrete = null, $shared = false ): void {
+	public function bind( $abstract, $concrete = null, $shared = false ) {
 		$this->drop_stale_instances( $abstract );
 
 		// If no concrete type was given, we will simply set the concrete type to the
@@ -262,8 +268,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 *
 	 * @param  array|string $method
 	 * @param  \Closure     $callback
+	 * @return void
 	 */
-	public function bind_method( $method, $callback ): void {
+	public function bind_method( $method, $callback ) {
 		$this->method_bindings[ $this->parse_bind_method( $method ) ] = $callback;
 	}
 
@@ -298,8 +305,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * @param  string               $abstract
 	 * @param  \Closure|string|null $concrete
 	 * @param  bool                 $shared
+	 * @return void
 	 */
-	public function bind_if( $abstract, $concrete = null, $shared = false ): void {
+	public function bind_if( $abstract, $concrete = null, $shared = false ) {
 		if ( ! $this->bound( $abstract ) ) {
 				$this->bind( $abstract, $concrete, $shared );
 		}
@@ -310,8 +318,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 *
 	 * @param  string               $abstract
 	 * @param  \Closure|string|null $concrete
+	 * @return void
 	 */
-	public function singleton( $abstract, $concrete = null ): void {
+	public function singleton( $abstract, $concrete = null ) {
 		$this->bind( $abstract, $concrete, true );
 	}
 
@@ -320,8 +329,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 *
 	 * @param  string               $abstract
 	 * @param  \Closure|string|null $concrete
+	 * @return void
 	 */
-	public function singleton_if( $abstract, $concrete = null ): void {
+	public function singleton_if( $abstract, $concrete = null ) {
 		if ( ! $this->bound( $abstract ) ) {
 			$this->singleton( $abstract, $concrete );
 		}
@@ -332,10 +342,11 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 *
 	 * @param  string   $abstract
 	 * @param  \Closure $closure
+	 * @return void
 	 *
 	 * @throws \InvalidArgumentException Thrown on invalid argument.
 	 */
-	public function extend( $abstract, Closure $closure ): void {
+	public function extend( $abstract, Closure $closure ) {
 		$abstract = $this->get_alias( $abstract );
 
 		if ( isset( $this->instances[ $abstract ] ) ) {
@@ -402,10 +413,11 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 *
 	 * @param  string $abstract
 	 * @param  string $alias
+	 * @return void
 	 *
 	 * @throws LogicException Thrown on logic error.
 	 */
-	public function alias( $abstract, $alias ): void {
+	public function alias( $abstract, $alias ) {
 		if ( $alias === $abstract ) {
 			throw new LogicException( "[{$abstract}] is aliased to itself." );
 		}
@@ -441,7 +453,7 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	public function refresh( $abstract, $target, $method ) {
 		return $this->rebinding(
 			$abstract,
-			function ( $app, $instance ) use ( $target, $method ): void {
+			function ( $app, $instance ) use ( $target, $method ) {
 				$target->{$method}( $instance );
 			}
 		);
@@ -479,7 +491,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * @return \Closure
 	 */
 	public function wrap( Closure $callback, array $parameters = [] ) {
-		return fn () => $this->call( $callback, $parameters );
+		return function () use ( $callback, $parameters ) {
+				return $this->call( $callback, $parameters );
+		};
 	}
 
 	/**
@@ -503,7 +517,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * @return \Closure
 	 */
 	public function factory( $abstract ) {
-		return fn () => $this->make( $abstract );
+		return function () use ( $abstract ) {
+			return $this->make( $abstract );
+		};
 	}
 
 	/**
@@ -680,8 +696,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 *
 	 * @param  mixed  $concrete
 	 * @param  string $abstract
+	 * @return bool
 	 */
-	protected function is_buildable( $concrete, $abstract ): bool {
+	protected function is_buildable( $concrete, $abstract ) {
 		return $concrete === $abstract || $concrete instanceof Closure;
 	}
 
@@ -750,10 +767,11 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * Resolve all of the dependencies from the ReflectionParameters.
 	 *
 	 * @param  \ReflectionParameter[] $dependencies
+	 * @return array
 	 *
 	 * @throws Binding_Resolution_Exception Thrown on missing resolution.
 	 */
-	protected function resolve_dependencies( array $dependencies ): array {
+	protected function resolve_dependencies( array $dependencies ) {
 		$results = [];
 
 		foreach ( $dependencies as $dependency ) {
@@ -870,7 +888,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 		}
 
 		return array_map(
-			fn ( $abstract) => $this->resolve( $abstract ),
+			function ( $abstract ) {
+				return $this->resolve( $abstract );
+			},
 			$concrete
 		);
 	}
@@ -899,10 +919,11 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * Throw an exception for an unresolvable primitive.
 	 *
 	 * @param  \ReflectionParameter $parameter
+	 * @return void
 	 *
 	 * @throws Binding_Resolution_Exception Thrown on missing resolution.
 	 */
-	protected function unresolvable_primitive( ReflectionParameter $parameter ): never {
+	protected function unresolvable_primitive( ReflectionParameter $parameter ) {
 		$message = "Unresolvable dependency resolving [$parameter] in class {$parameter->getDeclaringClass()->getName()}";
 
 		throw new Binding_Resolution_Exception( $message );
@@ -913,8 +934,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 *
 	 * @param  \Closure|string $abstract
 	 * @param  \Closure|null   $callback
+	 * @return void
 	 */
-	public function resolving( $abstract, Closure $callback = null ): void {
+	public function resolving( $abstract, Closure $callback = null ) {
 		if ( is_string( $abstract ) ) {
 			$abstract = $this->get_alias( $abstract );
 		}
@@ -931,8 +953,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 *
 	 * @param  \Closure|string $abstract
 	 * @param  \Closure|null   $callback
+	 * @return void
 	 */
-	public function after_resolving( $abstract, Closure $callback = null ): void {
+	public function after_resolving( $abstract, Closure $callback = null ) {
 		if ( is_string( $abstract ) ) {
 			$abstract = $this->get_alias( $abstract );
 		}
@@ -984,8 +1007,10 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * @param  string $abstract
 	 * @param  object $object
 	 * @param  array  $callbacks_per_type
+	 *
+	 * @return array
 	 */
-	protected function get_callbacks_for_type( $abstract, $object, array $callbacks_per_type ): array {
+	protected function get_callbacks_for_type( $abstract, $object, array $callbacks_per_type ) {
 			$results = [];
 
 		foreach ( $callbacks_per_type as $type => $callbacks ) {
@@ -1049,8 +1074,9 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * Remove all of the extender callbacks for a given type.
 	 *
 	 * @param  string $abstract
+	 * @return void
 	 */
-	public function forget_extenders( $abstract ): void {
+	public function forget_extenders( $abstract ) {
 		unset( $this->extenders[ $this->get_alias( $abstract ) ] );
 	}
 
@@ -1068,22 +1094,27 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * Remove a resolved instance from the instance cache.
 	 *
 	 * @param  string $abstract
+	 * @return void
 	 */
-	public function forget_instance( $abstract ): void {
+	public function forget_instance( $abstract ) {
 		unset( $this->instances[ $abstract ] );
 	}
 
 	/**
 	 * Clear all of the instances from the container.
+	 *
+	 * @return void
 	 */
-	public function forget_instances(): void {
+	public function forget_instances() {
 			$this->instances = [];
 	}
 
 	/**
 	 * Flush the container of all bindings and resolved instances.
+	 *
+	 * @return void
 	 */
-	public function flush(): void {
+	public function flush() {
 		$this->aliases          = [];
 		$this->resolved         = [];
 		$this->bindings         = [];
@@ -1103,6 +1134,8 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 
 	/**
 	 * Get the globally available instance of the container.
+	 *
+	 * @return \Mantle\Contracts\Container
 	 */
 	public static function get_instance(): \Mantle\Contracts\Container {
 		if ( ! isset( static::$instance ) ) {
@@ -1116,6 +1149,7 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * Set the shared instance of the container.
 	 *
 	 * @param  \Mantle\Contracts\Container|null $container
+	 * @return \Mantle\Contracts\Container|null
 	 */
 	public static function set_instance( \Mantle\Contracts\Container|null $container = null ): ?\Mantle\Contracts\Container {
 		static::$instance = $container;
@@ -1127,6 +1161,7 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * Determine if a given offset exists.
 	 *
 	 * @param  mixed $key
+	 * @return bool
 	 */
 	public function offsetExists( mixed $key ): bool {
 			return $this->bound( $key );
@@ -1136,6 +1171,7 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * Get the value at a given offset.
 	 *
 	 * @param  mixed $key
+	 * @return mixed
 	 */
 	public function offsetGet( mixed $key ): mixed {
 			return $this->make( $key );
@@ -1146,11 +1182,14 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 *
 	 * @param  mixed $key
 	 * @param  mixed $value
+	 * @return void
 	 */
 	public function offsetSet( mixed $key, mixed $value ): void {
 			$this->bind(
 				$key,
-				$value instanceof Closure ? $value : fn () => $value
+				$value instanceof Closure ? $value : function () use ( $value ) {
+					return $value;
+				}
 			);
 	}
 
@@ -1158,6 +1197,7 @@ class Container implements ArrayAccess, \Mantle\Contracts\Container {
 	 * Unset the value at a given offset.
 	 *
 	 * @param  mixed $key
+	 * @return void
 	 */
 	public function offsetUnset( mixed $key ): void {
 			unset( $this->bindings[ $key ], $this->instances[ $key ], $this->resolved[ $key ] );

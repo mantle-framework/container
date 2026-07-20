@@ -3,19 +3,16 @@
     "description": "The Mantle Framework Container Package",
     "type": "library",
     "require": {
-        "php": "^8.2",
-        "alleyinteractive/composer-wordpress-autoloader": "^1.0",
+        "php": "^8.3",
         "mantle-framework/contracts": "^1.0",
         "psr/container": "^1.1.1 || ^2.0.2"
     },
     "provide": {
         "psr/container-implementation": "1.1|2.0"
     },
-    "extra": {
-        "wordpress-autoloader": {
-            "autoload": {
-                "Mantle\\Container": "./"
-            }
+    "autoload": {
+        "psr-4": {
+            "Mantle\\Container\\": "./"
         }
     },
     "license": "GPL-2.0-or-later",
@@ -26,6 +23,9 @@
         }
     ],
     "config": {
+        "allow-plugins": {
+            "alleyinteractive/composer-wordpress-autoloader": true
+        },
         "sort-packages": true
     }
 }
